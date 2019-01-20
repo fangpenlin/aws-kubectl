@@ -1,2 +1,2 @@
 # kubectl
-Docker image just for kubectl executable
+Docker image for AWS cli and kubectl command line tools
