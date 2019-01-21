@@ -1,66 +1,8 @@
-version: 2
-jobs:
-  build:
-    working_directory: /app
-    docker:
-      - image: docker:17.05.0-ce-git
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Build Docker image
-          command: |
-            docker build -t aws-kubectl .
-      - run:
-          name: Save Docker image
-          command: |
-            mkdir -p docker-image
-            docker save -o docker-image/aws-kubectl.tar aws-kubectl
-      - persist_to_workspace:
-          root: .
-          paths:
-            - docker-image
-      - store_artifacts:
-          path: docker-image
-          destination: docker-image
-  deploy:  
-    docker:
-      - image: docker:17.05.0-ce-git
-    steps:
-      - checkout
-      - setup_remote_docker
-      - attach_workspace:
-          at: workspace
-      - run:
-          name: Load image
-          command: |
-            docker load --input workspace/docker-image/aws-kubectl.tar
-      - run:
-          name: Login Docker
-          command: |
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run:
-          name: Deploy
-          command: |
-            docker tag aws-kubectl fangpenlin/aws-kubectl:${CIRCLE_TAG}"
-            docker push fangpenlin/aws-kubectl:${CIRCLE_TAG}"
-
+version: 2.1
+orbs:
+  docker-publish: circleci/docker-publish@1.0.0
 workflows:
-  version: 2
-  build-deploy:
+  build:
     jobs:
-      - build:
-          filters:
-            # needed for deploy build
-            # ref: https://discuss.circleci.com/t/builds-for-tags-not-triggering/17681/7
-            tags:
-              only: /.*/
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      - docker-publish/publish:
+          deploy: false
