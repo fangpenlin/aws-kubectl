@@ -5,6 +5,7 @@ jobs:
   publish:
     executor: docker-publish/docker
     steps:
+      - setup_remote_docker
       - docker-publish/deploy:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
 workflows:
