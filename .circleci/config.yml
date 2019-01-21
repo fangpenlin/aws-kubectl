@@ -13,6 +13,7 @@ jobs:
           command: |
             export NAME=$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
             docker load --input workspace/docker-image/artifacts.tar
+      - docker-publish/check
       - docker-publish/deploy:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
 workflows:
@@ -38,8 +39,8 @@ workflows:
       - publish:
           requires:
             - docker-publish/publish
-          # filters:
-          #   branches:
-          #     ignore: /.*/
-          #   tags:
-          #     only: /.*/
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
