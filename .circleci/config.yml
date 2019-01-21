@@ -7,7 +7,6 @@ jobs:
     steps:
       - docker-publish/deploy:
         image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
-      - docker-publish/build
 workflows:
   build:
     jobs:
