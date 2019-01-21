@@ -1,46 +1,65 @@
-version: 2.1
-orbs:
-  docker-publish: circleci/docker-publish@0.1.4
+version: 2
 jobs:
-  publish:
-    executor: docker-publish/docker
+  build:
+    working_directory: /app
+    docker:
+      - image: circleci/python:3
     steps:
-      - setup_remote_docker
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build -t $CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Save Docker image
+          command: |
+            mkdir -p docker-image
+            docker save -o docker-image/$CIRCLE_PROJECT_REPONAME.tar $CIRCLE_PROJECT_REPONAME
+      - persist_to_workspace:
+          root: .
+          paths:
+            - docker-image
+      - store_artifacts:
+          path: docker-image
+          destination: docker-image
+  deploy:  
+    docker:
+      - image: circleci/python:3
+    environment:
+      AWS_DEFAULT_OUTPUT: json
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
       - attach_workspace:
           at: workspace
       - run:
           name: Load image
           command: |
-            export NAME=$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
-            docker load --input workspace/docker-image/artifacts.tar
-      - docker-publish/check
-      - docker-publish/deploy:
-          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
+            docker load --input workspace/docker-image/$CIRCLE_PROJECT_REPONAME.tar
+      - run:
+          name: Deploy
+          command: |
+            NAME="$DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG}"
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+            docker tag $CIRCLE_PROJECT_REPONAME $NAME
+            docker push $NAME
 workflows:
-  build_publish:
+  version: 2
+  build-deploy:
     jobs:
-      - docker-publish/publish:
-          deploy: false
-          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}
-          after_build:
-            - run:
-                name: Save Docker image
-                command: |
-                  export NAME=$DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
-                  mkdir -p docker-image
-                  docker save -o docker-image/artifacts.tar $NAME
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - docker-image
-            - store_artifacts:
-                path: docker-image
-                destination: docker-image
-      - publish:
+      - build:
+          filters:
+            # needed for deploy build
+            # ref: https://discuss.circleci.com/t/builds-for-tags-not-triggering/17681/7
+            tags:
+              only: /^v.*/
+      - deploy:
           requires:
-            - docker-publish/publish
+            - build
           filters:
             branches:
               ignore: /.*/
             tags:
-              only: /.*/
+              only: /^v.*/
