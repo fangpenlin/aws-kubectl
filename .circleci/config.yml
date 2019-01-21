@@ -6,4 +6,4 @@ workflows:
     jobs:
       - docker-publish/publish:
           deploy: false
-          tag: foo_$CIRCLE_SHA1
+          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}
