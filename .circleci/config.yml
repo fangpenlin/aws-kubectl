@@ -10,7 +10,7 @@ jobs:
           name: Load image
           command: |
             export NAME=$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
-            docker load --input workspace/docker-image/$NAME.tar
+            docker load --input workspace/docker-image/artifacts.tar
       - docker-publish/deploy:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
 workflows:
@@ -25,7 +25,7 @@ workflows:
                 command: |
                   export NAME=$DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:${CIRCLE_TAG:-$CIRCLE_SHA1}
                   mkdir -p docker-image
-                  docker save -o docker-image/$NAME.tar $NAME
+                  docker save -o docker-image/artifacts.tar $NAME
             - persist_to_workspace:
                 root: .
                 paths:
