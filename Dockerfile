@@ -4,7 +4,7 @@ ENV KUBE_LATEST_VERSION="v1.7.0"
 ENV HELM_LATEST_VERSION="v2.12.2"
 WORKDIR /tmp
 
-RUN apk --no-cache add openssl \
+RUN apk --no-cache add openssl ca-certificates \
   && wget -q -O kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBE_LATEST_VERSION/bin/linux/amd64/kubectl \
   && chmod +x kubectl \
   && mv kubectl /usr/local/bin
